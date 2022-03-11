@@ -27,7 +27,7 @@ async function core() {
 }
 
 function registerCommand() {
-  console.log("注册命令");
+  console.log("注册命令开始");
 }
 
 async function prepare() {
