@@ -1,0 +1,20 @@
+34 error Error: Command failed with exit code 1: git add -- utils/log/package.json utils/log/package-lock.json utils/get-npm-info/package.json utils/get-npm-info/package-lock.json core/cli/package.json core/cli/package-lock.json lerna.json
+34 error warning: LF will be replaced by CRLF in core/cli/package.json.
+34 error The file will have its original line endings in your working directory
+34 error warning: LF will be replaced by CRLF in lerna.json.
+34 error The file will have its original line endings in your working directory
+34 error warning: LF will be replaced by CRLF in utils/get-npm-info/package.json.
+34 error The file will have its original line endings in your working directory
+34 error warning: LF will be replaced by CRLF in utils/log/package.json.
+34 error The file will have its original line endings in your working directory
+34 error The following paths are ignored by one of your .gitignore files:
+34 error core/cli/package-lock.json
+34 error utils/get-npm-info/package-lock.json
+34 error utils/log/package-lock.json
+34 error hint: Use -f if you really want to add them.
+34 error hint: Turn this message off by running
+34 error hint: "git config advice.addIgnoredFile false"
+34 error     at makeError (E:\software\nvm\v16.3.0\node_modules\lerna\node_modules\execa\lib\error.js:60:11)
+34 error     at handlePromise (E:\software\nvm\v16.3.0\node_modules\lerna\node_modules\execa\index.js:118:26)
+34 error     at processTicksAndRejections (node:internal/process/task_queues:96:5)
+34 error     at async Promise.all (index 0)
