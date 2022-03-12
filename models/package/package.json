@@ -1,6 +1,6 @@
 {
   "name": "@bear-cli/package",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "bear-cli package",
   "author": "monster-liu <liuxiongcheng9774@gmail.com>",
   "homepage": "https://github.com/MonsterXiong/bear-cli#readme",
@@ -27,8 +27,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@bear-cli/get-npm-info": "^1.0.3",
-    "@bear-cli/utils": "^1.0.3",
+    "@bear-cli/get-npm-info": "^1.0.4",
+    "@bear-cli/utils": "^1.0.4",
     "fs-extra": "^10.0.1",
     "npminstall": "^5.5.0",
     "path-exists": "^4.0.0"
