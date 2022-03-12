@@ -20,8 +20,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@bear-cli/log": "file:../../utils/log",
+    "@bear-cli/log": "^1.0.5",
     "chalk": "^5.0.1",
     "semver": "^7.3.5"
-  }
+  },
+  "gitHead": "54b82f8b58c3f9fb85a7f6e61a5904c1587acb9f"
 }

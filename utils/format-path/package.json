@@ -22,5 +22,9 @@
   },
   "bugs": {
     "url": "https://github.com/MonsterXiong/bear-cli/issues"
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "gitHead": "54b82f8b58c3f9fb85a7f6e61a5904c1587acb9f"
 }
