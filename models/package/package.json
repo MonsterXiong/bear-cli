@@ -1,0 +1,36 @@
+{
+  "name": "@bear-cli/package",
+  "version": "1.0.2",
+  "description": "bear-cli package",
+  "author": "monster-liu <liuxiongcheng9774@gmail.com>",
+  "homepage": "https://github.com/MonsterXiong/bear-cli#readme",
+  "license": "ISC",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MonsterXiong/bear-cli.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "bugs": {
+    "url": "https://github.com/MonsterXiong/bear-cli/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@bear-cli/get-npm-info": "file:../../utils/get-npm-info",
+    "@bear-cli/utils": "file:../../utils/utils",
+    "fs-extra": "^10.0.1",
+    "npminstall": "^5.5.0",
+    "path-exists": "^4.0.0"
+  }
+}
