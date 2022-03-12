@@ -1,6 +1,6 @@
 {
   "name": "@bear-cli/command",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "> TODO: description",
   "author": "monster-liu <liuxiongcheng9774@gmail.com>",
   "homepage": "",
@@ -20,8 +20,8 @@
     "access": "public"
   },
   "dependencies": {
+    "@bear-cli/log": "file:../../utils/log",
     "chalk": "^5.0.1",
-    "semver": "^7.3.5",
-    "@bear-cli/log": "file:../../utils/log"
+    "semver": "^7.3.5"
   }
 }
