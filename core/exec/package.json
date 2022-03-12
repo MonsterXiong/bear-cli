@@ -27,7 +27,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@bear-cli/log": "file:../../utils/log",
-    "@bear-cli/package": "file:../../models/package"
-  }
+    "@bear-cli/log": "^1.0.2",
+    "@bear-cli/package": "^1.0.3"
+  },
+  "gitHead": "eabe67ff2541b3b351512f96a2b1084b61b7964c"
 }

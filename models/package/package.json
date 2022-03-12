@@ -27,10 +27,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@bear-cli/get-npm-info": "file:../../utils/get-npm-info",
-    "@bear-cli/utils": "file:../../utils/utils",
+    "@bear-cli/get-npm-info": "^1.0.3",
+    "@bear-cli/utils": "^1.0.3",
     "fs-extra": "^10.0.1",
     "npminstall": "^5.5.0",
     "path-exists": "^4.0.0"
-  }
+  },
+  "gitHead": "eabe67ff2541b3b351512f96a2b1084b61b7964c"
 }
