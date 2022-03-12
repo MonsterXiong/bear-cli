@@ -25,11 +25,14 @@
   "dependencies": {
     "@bear-cli/get-npm-info": "file:../../utils/get-npm-info",
     "@bear-cli/log": "file:../../utils/log",
+    "@bear-cli/exec": "file:../../core/exec",
     "chalk": "^1.1.3",
+    "commander": "^9.0.0",
     "dotenv": "^16.0.0",
     "path-exists": "^4.0.0",
     "root-check": "^1.0.0",
     "semver": "^7.3.5",
+    "terminal-link": "^2.1.1",
     "user-home": "^3.0.0"
   }
 }
