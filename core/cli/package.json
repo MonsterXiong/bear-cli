@@ -1,6 +1,6 @@
 {
   "name": "@bear-cli/core",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "bear-cli core",
   "author": "monster-liu <liuxiongcheng9774@gmail.com>",
   "homepage": "",
@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@bear-cli/command": "^1.0.7",
-    "@bear-cli/exec": "^1.0.7",
+    "@bear-cli/exec": "^1.0.8",
     "@bear-cli/get-npm-info": "^1.0.6",
     "@bear-cli/log": "^1.0.6",
     "chalk": "^1.1.3",
