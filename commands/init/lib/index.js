@@ -453,7 +453,8 @@ class InitCommand extends Command {
 }
 
 function init(argv) {
-  console.log("aaaa" + argv, "干活了");
+  console.log(argv);
+  console.log(arguments);
   // return new InitCommand(argv);
 }
 

@@ -27,7 +27,6 @@
     "access": "public"
   },
   "dependencies": {
-    "@bear-cli/format-path": "file:../../utils/format-path",
     "@bear-cli/log": "^1.0.6",
     "@bear-cli/package": "^1.0.6",
     "@bear-cli/utils": "^1.0.6"
