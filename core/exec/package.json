@@ -29,7 +29,8 @@
   "dependencies": {
     "@bear-cli/log": "^1.0.6",
     "@bear-cli/package": "^1.0.6",
-    "@bear-cli/utils": "^1.0.6"
+    "@bear-cli/utils": "^1.0.6",
+    "@bear-cli/format-path": "file:../../utils/format-path"
   },
   "gitHead": "54b82f8b58c3f9fb85a7f6e61a5904c1587acb9f"
 }

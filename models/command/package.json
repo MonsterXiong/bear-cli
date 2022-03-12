@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@bear-cli/log": "^1.0.6",
-    "chalk": "^5.0.1",
+    "chalk": "^4.1.2",
     "semver": "^7.3.5"
   },
   "gitHead": "54b82f8b58c3f9fb85a7f6e61a5904c1587acb9f"

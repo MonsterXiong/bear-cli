@@ -5,7 +5,7 @@ const path = require("path");
 const log = require("@bear-cli/log");
 const Package = require("@bear-cli/package");
 const { exec: spawn } = require("@bear-cli/utils");
-
+// const formatPath = require("@bear-cli/format-path");
 const SETTINGS = {
   init: "@bear-cli/init",
   publish: "@bear-cli/publish",
@@ -49,6 +49,12 @@ async function exec() {
   } else {
     pkg = new Package({ targetPath, packageName, packageVersion });
   }
+  // const rootFile = pkg.getRootFilePath();
+  // const rootFile = formatPath(
+  //   path.resolve(__dirname, "../../../commands/init/lib/index.js")
+  // );
+  // console.log(rootFile);
+  // const rootFile = "../../../commands/init/lib/index.js";
   const rootFile = pkg.getRootFilePath();
 
   if (rootFile) {
