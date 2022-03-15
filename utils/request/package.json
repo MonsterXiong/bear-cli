@@ -1,7 +1,7 @@
 {
-  "name": "@bear-cli/command",
-  "version": "1.0.7",
-  "description": "bear-cli command",
+  "name": "@bear-cli/request",
+  "version": "1.0.8",
+  "description": "bear-cli request",
   "author": "monster-liu <liuxiongcheng9774@gmail.com>",
   "homepage": "https://github.com/MonsterXiong/bear-cli#readme",
   "license": "ISC",
@@ -13,22 +13,21 @@
   "files": [
     "lib"
   ],
-  "scripts": {
-    "test": "echo \"Error: run tests from root\" && exit 1"
-  },
   "publishConfig": {
+    "registry": "https://registry.npmmirror.com/",
     "access": "public"
-  },
-  "dependencies": {
-    "@bear-cli/log": "^1.0.6",
-    "chalk": "^4.1.2",
-    "semver": "^7.3.5"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MonsterXiong/bear-cli.git"
   },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
   "bugs": {
     "url": "https://github.com/MonsterXiong/bear-cli/issues"
+  },
+  "dependencies": {
+    "axios": "^0.26.1"
   }
 }

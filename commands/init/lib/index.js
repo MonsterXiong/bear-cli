@@ -1,19 +1,19 @@
 "use strict";
 
-// const fs = require("fs");
-// const path = require("path");
-// const inquirer = require("inquirer");
-// const fse = require("fs-extra");
-// const glob = require("glob");
-// const ejs = require("ejs");
-// const semver = require("semver");
-// const userHome = require("user-home");
-const Command = require("@bear-cli/command");
-// const Package = require("@imooc-cli-dev/package");
-// const log = require("@imooc-cli-dev/log");
-// const { spinnerStart, sleep, execAsync } = require("@imooc-cli-dev/utils");
+const fs = require("fs");
+const path = require("path");
+const glob = require("glob");
+const ejs = require("ejs");
+const semver = require("semver");
+const inquirer = require("inquirer");
+const fse = require("fs-extra");
+const userHome = require("user-home");
+const log = require("@bear-cli/log");
+const { getProjectTemplate } = require("./getTemplate");
 
-// const getProjectTemplate = require("./getProjectTemplate");
+const Command = require("@bear-cli/command");
+const Package = require("@bear-cli/package");
+const { execAsync, oraStart } = require("@bear-cli/utils");
 
 const TYPE_PROJECT = "project";
 const TYPE_COMPONENT = "component";
@@ -21,26 +21,29 @@ const TYPE_COMPONENT = "component";
 const TEMPLATE_TYPE_NORMAL = "normal";
 const TEMPLATE_TYPE_CUSTOM = "custom";
 
-const WHITE_COMMAND = ["npm", "cnpm"];
+const WHITE_COMMAND = ["npm", "cnpm", "yarn"];
 
 class InitCommand extends Command {
   init() {
-    console.log("2222");
-    // this.projectName = this._argv[0] || "";
-    // this.force = !!this._cmd.force;
-    // log.verbose("projectName", this.projectName);
-    // log.verbose("force", this.force);
+    // 初始化阶段就是拿到参数
+    this.projectName = this._argv[0] || "";
+    // TODO:拿到options存在问题
+    this.force = !!this._argv[this._argv.length - 1].force;
+    log.verbose("projectName", this.projectName);
+    log.verbose("force", this.force);
   }
-
   async exec() {
     try {
       // 1. 准备阶段
       const projectInfo = await this.prepare();
+
       if (projectInfo) {
-        // 2. 下载模板
+        // 下载模板
         log.verbose("projectInfo", projectInfo);
         this.projectInfo = projectInfo;
+        // 2.下载或者更新模板
         await this.downloadTemplate();
+
         // 3. 安装模板
         await this.installTemplate();
       }
@@ -54,6 +57,7 @@ class InitCommand extends Command {
 
   async installTemplate() {
     log.verbose("templateInfo", this.templateInfo);
+
     if (this.templateInfo) {
       if (!this.templateInfo.type) {
         this.templateInfo.type = TEMPLATE_TYPE_NORMAL;
@@ -72,11 +76,32 @@ class InitCommand extends Command {
     }
   }
 
-  checkCommand(cmd) {
-    if (WHITE_COMMAND.includes(cmd)) {
-      return cmd;
+  async installNormalTemplate() {
+    log.verbose("templateNpm", this.templateNpm);
+    let spinner = oraStart("正在安装模板...");
+    try {
+      const templatePath = path.resolve(
+        this.templateNpm.cacheFilePath,
+        "template"
+      );
+      const targetPath = process.cwd();
+      fse.ensureDirSync(templatePath);
+      fse.ensureDirSync(targetPath);
+      fse.copySync(templatePath, targetPath);
+    } catch (e) {
+      throw e;
+    } finally {
+      spinner.stop();
+      log.success("模板安装成功");
     }
-    return null;
+    const templateIgnore = this.templateInfo.ignore || [];
+    const ignore = ["**/node_modules/**", ...templateIgnore];
+    await this.ejsRender({ ignore });
+    const { installCommand, startCommand } = this.templateInfo;
+    // // 依赖安装
+    await this.execCommand(installCommand, "依赖安装失败！");
+    // // 启动命令执行
+    await this.execCommand(startCommand, "启动执行命令失败！");
   }
 
   async execCommand(command, errMsg) {
@@ -97,6 +122,13 @@ class InitCommand extends Command {
       throw new Error(errMsg);
     }
     return ret;
+  }
+
+  checkCommand(cmd) {
+    if (WHITE_COMMAND.includes(cmd)) {
+      return cmd;
+    }
+    return null;
   }
 
   async ejsRender(options) {
@@ -140,108 +172,48 @@ class InitCommand extends Command {
     });
   }
 
-  async installNormalTemplate() {
-    log.verbose("templateNpm", this.templateNpm);
-    // 拷贝模板代码至当前目录
-    let spinner = spinnerStart("正在安装模板...");
-    await sleep();
-    try {
-      const templatePath = path.resolve(
-        this.templateNpm.cacheFilePath,
-        "template"
-      );
-      const targetPath = process.cwd();
-      fse.ensureDirSync(templatePath);
-      fse.ensureDirSync(targetPath);
-      fse.copySync(templatePath, targetPath);
-    } catch (e) {
-      throw e;
-    } finally {
-      spinner.stop(true);
-      log.success("模板安装成功");
-    }
-    const templateIgnore = this.templateInfo.ignore || [];
-    const ignore = ["**/node_modules/**", ...templateIgnore];
-    await this.ejsRender({ ignore });
-    const { installCommand, startCommand } = this.templateInfo;
-    // 依赖安装
-    await this.execCommand(installCommand, "依赖安装失败！");
-    // 启动命令执行
-    await this.execCommand(startCommand, "启动执行命令失败！");
-  }
-
-  async installCustomTemplate() {
-    // 查询自定义模板的入口文件
-    if (await this.templateNpm.exists()) {
-      const rootFile = this.templateNpm.getRootFilePath();
-      if (fs.existsSync(rootFile)) {
-        log.notice("开始执行自定义模板");
-        const templatePath = path.resolve(
-          this.templateNpm.cacheFilePath,
-          "template"
-        );
-        const options = {
-          templateInfo: this.templateInfo,
-          projectInfo: this.projectInfo,
-          sourcePath: templatePath,
-          targetPath: process.cwd(),
-        };
-        const code = `require('${rootFile}')(${JSON.stringify(options)})`;
-        log.verbose("code", code);
-        await execAsync("node", ["-e", code], {
-          stdio: "inherit",
-          cwd: process.cwd(),
-        });
-        log.success("自定义模板安装成功");
-      } else {
-        throw new Error("自定义模板入口文件不存在！");
-      }
-    }
-  }
-
   async downloadTemplate() {
     const { projectTemplate } = this.projectInfo;
     const templateInfo = this.template.find(
-      (item) => item.npmName === projectTemplate
+      (item) => item.packageName === projectTemplate
     );
-    const targetPath = path.resolve(userHome, ".imooc-cli-dev", "template");
+    const targetPath = path.resolve(userHome, ".bear-cli", "template");
     const storeDir = path.resolve(
       userHome,
-      ".imooc-cli-dev",
+      ".bear-cli",
       "template",
       "node_modules"
     );
-    const { npmName, version } = templateInfo;
+    const { packageName, version } = templateInfo;
     this.templateInfo = templateInfo;
     const templateNpm = new Package({
       targetPath,
       storeDir,
-      packageName: npmName,
+      packageName,
       packageVersion: version,
     });
     if (!(await templateNpm.exists())) {
-      const spinner = spinnerStart("正在下载模板...");
-      await sleep();
+      // const spinner = spinnerStart("正在下载模板...");
+      const spinner = oraStart("正在下载模板...");
       try {
         await templateNpm.install();
       } catch (e) {
         throw e;
       } finally {
-        spinner.stop(true);
+        spinner.stop();
         if (await templateNpm.exists()) {
           log.success("下载模板成功");
           this.templateNpm = templateNpm;
         }
       }
     } else {
-      const spinner = spinnerStart("正在更新模板...");
-      await sleep();
+      const spinner = oraStart("正在更新模板...");
       try {
         await templateNpm.update();
       } catch (e) {
         throw e;
       } finally {
-        spinner.stop(true);
+        spinner.stop();
         if (await templateNpm.exists()) {
           log.success("更新模板成功");
           this.templateNpm = templateNpm;
@@ -249,35 +221,33 @@ class InitCommand extends Command {
       }
     }
   }
-
   async prepare() {
-    // 0. 判断项目模板是否存在
+    // // 0. 判断项目模板是否存在
     const template = await getProjectTemplate();
     if (!template || template.length === 0) {
       throw new Error("项目模板不存在");
     }
     this.template = template;
-    // 1. 判断当前目录是否为空
+    // 判断当前目录是否为空，在当前目录创建一个文件夹即可
     const localPath = process.cwd();
     if (!this.isDirEmpty(localPath)) {
       let ifContinue = false;
       if (!this.force) {
-        // 询问是否继续创建
         ifContinue = (
           await inquirer.prompt({
             type: "confirm",
             name: "ifContinue",
             default: false,
-            message: "当前文件夹不为空，是否继续创建项目？",
+            message: "当前文件夹不为空，是否继续创建项目",
           })
         ).ifContinue;
         if (!ifContinue) {
           return;
         }
       }
-      // 2. 是否启动强制更新
+      // 是否强制更新
       if (ifContinue || this.force) {
-        // 给用户做二次确认
+        // 二次确认
         const { confirmDelete } = await inquirer.prompt({
           type: "confirm",
           name: "confirmDelete",
@@ -299,7 +269,6 @@ class InitCommand extends Command {
         v
       );
     }
-
     let projectInfo = {};
     let isProjectNameValid = false;
     if (isValidName(this.projectName)) {
@@ -437,8 +406,7 @@ class InitCommand extends Command {
 
   isDirEmpty(localPath) {
     let fileList = fs.readdirSync(localPath);
-    // 文件过滤的逻辑
-    fileList = fileList.filter(
+    fileList.filter(
       (file) => !file.startsWith(".") && ["node_modules"].indexOf(file) < 0
     );
     return !fileList || fileList.length <= 0;
@@ -446,16 +414,14 @@ class InitCommand extends Command {
 
   createTemplateChoice() {
     return this.template.map((item) => ({
-      value: item.npmName,
+      value: item.packageName,
       name: item.name,
     }));
   }
 }
 
 function init(argv) {
-  console.log(argv);
-  console.log(arguments);
-  // return new InitCommand(argv);
+  return new InitCommand(argv);
 }
 
 module.exports = init;

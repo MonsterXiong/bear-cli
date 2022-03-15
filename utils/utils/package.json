@@ -26,5 +26,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "54b82f8b58c3f9fb85a7f6e61a5904c1587acb9f"
+  "gitHead": "54b82f8b58c3f9fb85a7f6e61a5904c1587acb9f",
+  "dependencies": {
+    "ora": "^5.4.1"
+  }
 }

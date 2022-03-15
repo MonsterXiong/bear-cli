@@ -19,12 +19,11 @@ async function exec() {
   let pkg;
   log.verbose("targetPath", targetPath);
   log.verbose("homePath", homePath);
+
   const cmdObj = arguments[arguments.length - 1];
-  const cmdName = cmdObj._name;
+  const cmdName = cmdObj.name();
   const packageName = SETTINGS[cmdName];
   const packageVersion = "latest";
-  log.verbose("packageName", packageName);
-  log.verbose("packageVersion", packageVersion);
 
   if (!targetPath) {
     // 没有指定调试文件路径
@@ -69,9 +68,7 @@ async function exec() {
       });
 
       args[args.length - 1] = o;
-      const code = `require('${rootFile}').call(null, ${JSON.stringify(
-        args[0]
-      )})`;
+      const code = `require('${rootFile}').call(null, ${JSON.stringify(args)})`;
       const child = spawn("node", ["-e", code], {
         cwd: process.cwd(),
         stdio: "inherit",

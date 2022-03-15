@@ -54,7 +54,7 @@ function registerCommand() {
   program
     .command("docs")
     .description("查看文档")
-    .option("-t, --type", "指定类型")
+    .option("-t,--type", "指定类型")
     .action(() => {
       console.log("查看文档");
     });
@@ -62,7 +62,7 @@ function registerCommand() {
   program
     .command("init [projectName]")
     .description("项目初始化")
-    .option("-f, --force", "是否强制初始化项目")
+    .option("-f,--force", "是否强制初始化项目")
     .action(exec);
 
   program
