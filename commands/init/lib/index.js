@@ -7,7 +7,7 @@ const ejs = require("ejs");
 const semver = require("semver");
 const inquirer = require("inquirer");
 const fse = require("fs-extra");
-const userHome = require("user-home");
+const userHome = require("os").homedir();
 const log = require("@bear-cli/log");
 const { getProjectTemplate } = require("./getTemplate");
 
