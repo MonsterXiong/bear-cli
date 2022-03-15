@@ -9,11 +9,12 @@ const inquirer = require("inquirer");
 const fse = require("fs-extra");
 const userHome = require("os").homedir();
 const log = require("@bear-cli/log");
-const { getProjectTemplate } = require("./getTemplate");
 
 const Command = require("@bear-cli/command");
 const Package = require("@bear-cli/package");
 const { execAsync, oraStart } = require("@bear-cli/utils");
+
+const { getProjectTemplate } = require("./getTemplate");
 
 const TYPE_PROJECT = "project";
 const TYPE_COMPONENT = "component";
@@ -21,7 +22,7 @@ const TYPE_COMPONENT = "component";
 const TEMPLATE_TYPE_NORMAL = "normal";
 const TEMPLATE_TYPE_CUSTOM = "custom";
 
-const WHITE_COMMAND = ["npm", "cnpm", "yarn"];
+const WHITE_COMMAND = ["npm", "cnpm", "yarn", "pnpm"];
 
 class InitCommand extends Command {
   init() {
@@ -32,6 +33,7 @@ class InitCommand extends Command {
     log.verbose("projectName", this.projectName);
     log.verbose("force", this.force);
   }
+
   async exec() {
     try {
       // 1. 准备阶段
@@ -67,12 +69,42 @@ class InitCommand extends Command {
         await this.installNormalTemplate();
       } else if (this.templateInfo.type === TEMPLATE_TYPE_CUSTOM) {
         // 自定义安装
+        // TODO:自定义模板~~~
         await this.installCustomTemplate();
       } else {
         throw new Error("无法识别项目模板类型！");
       }
     } else {
       throw new Error("项目模板信息不存在！");
+    }
+  }
+
+  async installCustomTemplate() {
+    // 查询自定义模板的入口文件
+    if (await this.templateNpm.exists()) {
+      const rootFile = this.templateNpm.getRootFilePath();
+      if (fs.existsSync(rootFile)) {
+        log.notice("开始执行自定义模板");
+        const templatePath = path.resolve(
+          this.templateNpm.cacheFilePath,
+          "template"
+        );
+        const options = {
+          templateInfo: this.templateInfo,
+          projectInfo: this.projectInfo,
+          sourcePath: templatePath,
+          targetPath: process.cwd(),
+        };
+        const code = `require('${rootFile}')(${JSON.stringify(options)})`;
+        log.verbose("code", code);
+        await execAsync("node", ["-e", code], {
+          stdio: "inherit",
+          cwd: process.cwd(),
+        });
+        log.success("自定义模板安装成功");
+      } else {
+        throw new Error("自定义模板入口文件不存在！");
+      }
     }
   }
 
