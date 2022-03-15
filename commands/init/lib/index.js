@@ -27,7 +27,7 @@ class InitCommand extends Command {
   init() {
     // 初始化阶段就是拿到参数
     this.projectName = this._argv[0] || "";
-    // TODO:拿到options存在问题ss
+    // TODO:拿到options存在问题
     this.force = !!this._argv[this._argv.length - 1].force;
     log.verbose("projectName", this.projectName);
     log.verbose("force", this.force);
