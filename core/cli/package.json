@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@bear-cli/command": "^1.0.14",
-    "@bear-cli/exec": "^1.0.14",
+    "@bear-cli/exec": "file:../../core/exec",
     "@bear-cli/get-npm-info": "^1.0.6",
     "@bear-cli/log": "^1.0.6",
     "chalk": "^1.1.3",

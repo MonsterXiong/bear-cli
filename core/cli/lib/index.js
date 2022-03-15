@@ -69,9 +69,7 @@ function registerCommand() {
     .command("add <command> <name>")
     .description("添加内容")
     .option("--path", "文件放置路径", "./")
-    .action(() => {
-      console.log("添加内容");
-    });
+    .action(exec);
 
   program
     .command("publish")
@@ -79,9 +77,7 @@ function registerCommand() {
     .option("--refreshServer", "强制更新远程Git仓库")
     .option("--refreshToken", "强制更新远程仓库token")
     .option("--refreshOwner", "强制更新远程仓库类型")
-    .action(() => {
-      console.log("项目发布");
-    });
+    .action(exec);
 
   program
     .command("clean")
