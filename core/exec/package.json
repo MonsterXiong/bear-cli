@@ -1,6 +1,6 @@
 {
   "name": "@bear-cli/exec",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "bear-cli exec",
   "author": "monster-liu <liuxiongcheng9774@gmail.com>",
   "homepage": "https://github.com/MonsterXiong/bear-cli#readme",
@@ -28,8 +28,8 @@
   },
   "dependencies": {
     "@bear-cli/log": "^1.0.6",
-    "@bear-cli/package": "^1.0.9",
-    "@bear-cli/utils": "^1.0.9"
+    "@bear-cli/package": "^1.0.10",
+    "@bear-cli/utils": "^1.0.10"
   },
   "gitHead": "94c89ff2810e0c2e5761f33d7edfb2276ec4f606"
 }
