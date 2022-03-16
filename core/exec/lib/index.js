@@ -19,7 +19,6 @@ async function exec() {
   let pkg;
   log.verbose("targetPath", targetPath);
   log.verbose("homePath", homePath);
-
   const cmdObj = arguments[arguments.length - 1];
   const cmdName = cmdObj.name();
   const packageName = SETTINGS[cmdName];
@@ -66,7 +65,6 @@ async function exec() {
           o[key] = cmd[key];
         }
       });
-
       args[args.length - 1] = o;
       const code = `require('${rootFile}').call(null, ${JSON.stringify(args)})`;
       const child = spawn("node", ["-e", code], {

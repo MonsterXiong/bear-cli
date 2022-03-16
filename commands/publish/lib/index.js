@@ -12,13 +12,12 @@ const log = require("@bear-cli/log");
 class PublishCommand extends Command {
   init() {
     // 拿到参数
-    log.verbose("publish", this._argv[0]);
+    // log.verbose("publish", this._argv[0]);
     this.options = {
       refreshServer: this._argv[0].refreshServer,
       refreshToken: this._argv[0].refreshToken,
       refreshOwner: this._argv[0].refreshOwner,
     };
-    // return;
   }
   async exec() {
     try {

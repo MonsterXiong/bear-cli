@@ -10,7 +10,7 @@ const pathExists = require("path-exists").sync;
 const chalk = require("chalk");
 const semver = require("semver");
 const terminalLink = require("terminal-link");
-const { Command } = require("commander");
+const { Command, Option } = require("commander");
 const program = new Command();
 const constant = require("./constant");
 
@@ -39,6 +39,7 @@ function registerCommand() {
     .option("-v,--version", "查看版本号", pkg.version)
     .option("-d, --debug", "打开调试模式", false)
     .option("-tp, --targetPath <value>", "指定本地调试文件路径")
+    .option("-b, --buildCmd <value>", "构建命令")
     .option("-h, --help", "帮助文档");
 
   program
@@ -77,7 +78,6 @@ function registerCommand() {
     .option("--refreshServer", "强制更新远程Git仓库")
     .option("--refreshToken", "强制更新远程仓库token")
     .option("--refreshOwner", "强制更新远程仓库类型")
-    .option("--buildCmd <buildCmd>", "手动指定build命令")
     .action(exec);
 
   program
@@ -108,6 +108,11 @@ function registerCommand() {
   // 指定targetPath
   program.on("option:targetPath", function () {
     process.env.CLI_TARGET_PATH = program.opts().targetPath;
+  });
+
+  // 指定targetPath
+  program.on("option:buildCmd", function () {
+    process.env.CLI_BUILD_CMD = program.opts().buildCmd;
   });
 
   // 对未知命令监听
@@ -186,5 +191,5 @@ function checkRoot() {
 }
 
 function checkPkgVersion() {
-  log.notice("cli", pkg.version);
+  log.info("cli", pkg.version);
 }

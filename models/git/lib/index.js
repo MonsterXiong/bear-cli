@@ -24,6 +24,7 @@ const GIT_TOKEN_FILE = ".git_token";
 const GIT_OWN_FILE = ".git_own";
 const GIT_LOGIN_FILE = ".git_login";
 const GIT_IGNORE_FILE = ".gitignore";
+const GIT_PUBLISH_FILE = ".git_publish";
 
 const VERSION_RELEASE = "release";
 const VERSION_DEVELOP = "dev";
@@ -63,15 +64,29 @@ const GIT_SERVER_TYPE = [
   },
 ];
 
+const OSS = "oss";
+const COS = "cos";
+const QINIU = "qiniu";
+
+const GIT_PUBLISH_TYPE = [
+  {
+    name: "OSS",
+    value: OSS,
+  },
+  {
+    name: "COS",
+    value: COS,
+  },
+  {
+    name: "七牛云",
+    value: QINIU,
+  },
+];
+
 class Git {
   constructor(
     { name, version, dir },
-    {
-      refreshToken = false,
-      refreshServer = false,
-      refreshOwner = false,
-      buildCmd,
-    }
+    { refreshToken = false, refreshServer = false, refreshOwner = false }
   ) {
     this.name = name; // 项目名称
     this.version = version; // 项目版本
@@ -90,7 +105,7 @@ class Git {
     this.refreshOwner = refreshOwner; // 是否强化刷新远程仓库类型
     this.branch = null; // 本地开发分支
 
-    this.buildCmd = buildCmd; // 手动指定build命令
+    this.buildCmd = process.env.CLI_BUILD_CMD; // 手动指定build命令
   }
 
   async prepare() {
@@ -130,13 +145,39 @@ class Git {
 
   // 测试/正式发布
   async publish() {
-    console.log("开始发布了咯");
+    let buildRet = false;
     if (this.isComponent()) {
       log.notice("开始发布组件");
       await this.saveComponentToDB();
     } else {
       await this.prePublish();
       log.notice("开始发布");
+      const gitPublishTypePath = this.createPath(GIT_PUBLISH_FILE);
+      let gitPublishType = readFile(gitPublishTypePath);
+      if (!gitPublishType) {
+        gitPublishType = (
+          await inquirer.prompt({
+            type: "list",
+            name: "gitPublishType",
+            choices: GIT_PUBLISH_TYPE,
+            message: "请选择您想要上传代码的平台",
+          })
+        ).gitPublishType;
+        writeFile(gitPublishTypePath, gitPublishType);
+        log.success(
+          "git publish类型写入成功",
+          `${gitPublishType} -> ${gitPublishTypePath}`
+        );
+      } else {
+        log.success("git publish类型获取成功", gitPublishType);
+      }
+      log.verbose("开始创建构建类", "~~~");
+      // const cloudBuild = new CloudBuild(this, gitPublishType, {
+      //   prod: !!this.prod,
+      //   keepCache: !!this.keepCache,
+      //   cnpm: !!this.cnpm,
+      //   buildCmd: this.buildCmd,
+      // });
     }
   }
 
@@ -252,13 +293,17 @@ class Git {
       await this.git.add(status.modified);
       await this.git.add(status.renamed);
       let message;
-      while (!message) {
-        message = await inquirer({
-          type: "text",
-          message: "请输入 commit 信息：",
-          defaultValue: "",
-        });
+      if (!message) {
+        message = (
+          await inquirer.prompt({
+            type: "text",
+            name: "message",
+            message: "请输入 commit 信息：",
+            defaultValue: "",
+          })
+        ).message;
       }
+      log.verbose("commit 信息", message);
       await this.git.commit(message);
       log.success("本地 commit 提交成功");
     }
@@ -498,7 +543,6 @@ pnpm-debug.log*
     } else {
       log.success("远程仓库信息获取成功");
     }
-    log.verbose("repo", repo);
     this.repo = repo;
   }
 
@@ -556,7 +600,6 @@ pnpm-debug.log*
     if (!this.orgs) {
       throw new Error("组织信息获取失败！");
     }
-    log.verbose("组织", this.orgs);
     log.success(" 获取 " + this.gitServer.type + " 用户和组织信息获取成功");
   }
 

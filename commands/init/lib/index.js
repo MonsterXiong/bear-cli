@@ -96,7 +96,6 @@ class InitCommand extends Command {
           targetPath: process.cwd(),
         };
         const code = `require('${rootFile}')(${JSON.stringify(options)})`;
-        log.verbose("code", code);
         await execAsync("node", ["-e", code], {
           stdio: "inherit",
           cwd: process.cwd(),
@@ -307,6 +306,7 @@ class InitCommand extends Command {
       isProjectNameValid = true;
       projectInfo.projectName = this.projectName;
     }
+    console.log(this.projectName);
     // 1. 选择创建项目或组件
     const { type } = await inquirer.prompt({
       type: "list",
