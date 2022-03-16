@@ -19,7 +19,7 @@ class CloudBuild {
   constructor(git, type, options = {}) {
     log.verbose("CloudBuild options", options);
     this._git = git;
-    // 暂时只支持OSS
+    // 暂时只支持OSS,接下来会支持COS和七牛云
     this._type = type;
     // 超时时间，默认20分钟
     this._timeout = get(options, "timeout") || 1200 * 1000;
