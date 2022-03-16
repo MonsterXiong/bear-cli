@@ -18,7 +18,7 @@ class PublishCommand extends Command {
       refreshToken: this._argv[0].refreshToken,
       refreshOwner: this._argv[0].refreshOwner,
     };
-    return;
+    // return;
   }
   async exec() {
     try {
