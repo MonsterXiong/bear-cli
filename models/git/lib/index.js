@@ -13,6 +13,7 @@ const { readFile, writeFile } = require("@bear-cli/utils");
 const log = require("@bear-cli/log");
 const { oraStart } = require("@bear-cli/utils");
 
+const { createComponent } = require("./ComponentRequest");
 const Github = require("./Github");
 const Gitee = require("./Gitee");
 
@@ -26,6 +27,7 @@ const GIT_IGNORE_FILE = ".gitignore";
 
 const VERSION_RELEASE = "release";
 const VERSION_DEVELOP = "dev";
+const COMPONENT_FILE = ".componentrc";
 
 const REPO_OWNER_USER = "user";
 const REPO_OWNER_ORG = "org";
@@ -64,7 +66,12 @@ const GIT_SERVER_TYPE = [
 class Git {
   constructor(
     { name, version, dir },
-    { refreshToken = false, refreshServer = false, refreshOwner = false }
+    {
+      refreshToken = false,
+      refreshServer = false,
+      refreshOwner = false,
+      buildCmd,
+    }
   ) {
     this.name = name; // 项目名称
     this.version = version; // 项目版本
@@ -82,6 +89,8 @@ class Git {
     this.refreshToken = refreshToken; // 是否强化刷新远程仓库token
     this.refreshOwner = refreshOwner; // 是否强化刷新远程仓库类型
     this.branch = null; // 本地开发分支
+
+    this.buildCmd = buildCmd; // 手动指定build命令
   }
 
   async prepare() {
@@ -91,7 +100,7 @@ class Git {
     await this.getUserAndOrgs(); // 获取远程仓库用户和组织信息
     await this.checkGitOwner(); // 确认远程仓库类型
     await this.checkRepo(); // 检查并创建远程仓库
-    this.checkGitIgnore(); // 检查并创建.gitignore文件
+    await this.checkGitIgnore(); // 检查并创建.gitignore文件
     await this.init(); // 完成本地仓库初始化
   }
   async init() {
@@ -99,6 +108,7 @@ class Git {
       return;
     }
     await this.initAndAddRemote();
+    await this.initCommit();
   }
 
   async commit() {
@@ -108,12 +118,150 @@ class Git {
     await this.checkStash();
     // 3.检查代码冲突
     await this.checkConflicted();
+    // 检查未提交情况
+    await this.checkNotCommitted();
     // 4.切换开发分支
     await this.checkoutBranch(this.branch);
     // 5.合并远程master分支和开发分支代码
     await this.pullRemoteMasterAndBranch();
     // 6.将开发分支推送到远程仓库
     await this.pushRemoteRepo(this.branch);
+  }
+
+  // 测试/正式发布
+  async publish() {
+    console.log("开始发布了咯");
+    if (this.isComponent()) {
+      log.notice("开始发布组件");
+      await this.saveComponentToDB();
+    } else {
+      await this.prePublish();
+      log.notice("开始发布");
+    }
+  }
+
+  // 发布前自动检查
+  async prePublish() {
+    log.notice("开始执行发布前自动检查任务");
+    // 代码检查
+    this.checkProject();
+    // build 检查
+    log.success("自动检查通过");
+  }
+  // build结果检查
+  checkProject() {
+    log.notice("开始检查代码结构");
+    const pkg = this.getPackageJson();
+    if (!pkg.scripts || !Object.keys(pkg.scripts).includes("build")) {
+      throw new Error("build命令不存在！");
+    }
+    log.success("代码结构检查通过");
+    log.notice("开始检查 build 结果");
+    if (this.buildCmd) {
+      require("child_process").execSync(this.buildCmd, {
+        cwd: this.dir,
+      });
+    } else {
+      require("child_process").execSync("npm run build", {
+        cwd: this.dir,
+      });
+    }
+    log.notice("build 结果检查通过");
+  }
+
+  getPackageJson() {
+    // 获取项目package.json文件
+    const pkgPath = path.resolve(this.dir, "package.json");
+    if (!fs.existsSync(pkgPath)) {
+      throw new Error("package.json 不存在！");
+    }
+    return fse.readJsonSync(pkgPath);
+  }
+
+  // 将组件信息保存至数据库
+  async saveComponentToDB() {
+    log.notice("上传组件信息至OSS+写入数据库");
+    const componentFile = this.isComponent();
+    const componentExamplePath = path.resolve(
+      this.dir,
+      componentFile.examplePath
+    );
+    let dirs = fs.readdirSync(componentExamplePath);
+    dirs = dirs.filter((dir) => dir.match(/^index(\d)*.html$/));
+    componentFile.exampleList = dirs;
+    const data = await createComponent({
+      component: componentFile,
+      git: {
+        type: this.gitServer.type,
+        remote: this.remote,
+        version: this.version,
+        branch: this.branch,
+        login: this.login,
+        owner: this.owner,
+        repo: this.repo,
+      },
+    });
+    if (!data) {
+      throw new Error("上传组件失败");
+    }
+    log.notice("保存组件信息成功");
+    log.notice("上传预览页面至OSS");
+    log.success("上传预览页面至OSS");
+  }
+
+  // 判断是否为组件
+  isComponent() {
+    const componentFilePath = path.resolve(this.dir, COMPONENT_FILE);
+    return (
+      fs.existsSync(componentFilePath) && fse.readJsonSync(componentFilePath)
+    );
+  }
+
+  async initCommit() {
+    await this.checkConflicted();
+    await this.checkNotCommitted();
+    if (await this.checkRemoteMaster()) {
+      log.notice("远程存在 master 分支，强制合并");
+      await this.pullRemoteRepo("master", {
+        "--allow-unrelated-histories": null,
+      });
+    } else {
+      await this.pushRemoteRepo("master");
+    }
+  }
+
+  async checkRemoteMaster() {
+    return (
+      (await this.git.listRemote(["--refs"])).indexOf("refs/heads/master") >= 0
+    );
+  }
+
+  async checkNotCommitted() {
+    const status = await this.git.status();
+    if (
+      status.not_added.length > 0 ||
+      status.created.length > 0 ||
+      status.deleted.length > 0 ||
+      status.modified.length > 0 ||
+      status.renamed.length > 0
+    ) {
+      log.verbose("status", status);
+      await this.git.add(status.not_added);
+      await this.git.add(status.created);
+      await this.git.add(status.deleted);
+      await this.git.add(status.modified);
+      await this.git.add(status.renamed);
+      let message;
+      while (!message) {
+        message = await inquirer({
+          type: "text",
+          message: "请输入 commit 信息：",
+          defaultValue: "",
+        });
+      }
+      await this.git.commit(message);
+      log.success("本地 commit 提交成功");
+    }
   }
 
   async pushRemoteRepo(branchName) {
@@ -196,7 +344,10 @@ class Git {
       );
       this.branch = `${VERSION_DEVELOP}/${devVersion}`;
     } else {
-      log.info("当前线上版本大于本地版本", `${releaseVersion} > ${devVersion}`);
+      log.notice(
+        "当前线上版本大于本地版本",
+        `${releaseVersion} >= ${devVersion}`
+      );
       const incType = (
         await inquirer.prompt({
           type: "list",
@@ -231,10 +382,9 @@ class Git {
       const incVersion = semver.inc(releaseVersion, incType);
       this.branch = `${VERSION_DEVELOP}/${incVersion}`;
       this.version = incVersion;
+      this.syncVersionToPackageJson();
     }
-    log.verbose("本地开发分支", this.branch);
-    // 3.将version同步到package.json
-    this.syncVersionToPackageJson();
+    log.success(`代码分支获取成功 ${this.branch}`);
   }
 
   syncVersionToPackageJson() {

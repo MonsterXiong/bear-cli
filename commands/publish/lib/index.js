@@ -18,6 +18,7 @@ class PublishCommand extends Command {
       refreshToken: this._argv[0].refreshToken,
       refreshOwner: this._argv[0].refreshOwner,
     };
+    return;
   }
   async exec() {
     try {
@@ -29,6 +30,7 @@ class PublishCommand extends Command {
       await git.prepare(); // 自动化提交准备和代码仓库初始化
       await git.commit(); // 代码自动化提交
       //   3. 云构建和云发布~~
+      await git.publish();
       const endTime = new Date().getTime();
       log.info(
         "本次发布耗时：",

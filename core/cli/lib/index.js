@@ -77,6 +77,7 @@ function registerCommand() {
     .option("--refreshServer", "强制更新远程Git仓库")
     .option("--refreshToken", "强制更新远程仓库token")
     .option("--refreshOwner", "强制更新远程仓库类型")
+    .option("--buildCmd <buildCmd>", "手动指定build命令")
     .action(exec);
 
   program
