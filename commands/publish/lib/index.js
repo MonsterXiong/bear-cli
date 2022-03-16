@@ -4,7 +4,9 @@ const path = require("path");
 const fs = require("fs");
 
 const fse = require("fs-extra");
+
 const Command = require("@bear-cli/command");
+const Git = require("@bear-cli/git");
 const log = require("@bear-cli/log");
 
 class PublishCommand extends Command {
@@ -23,6 +25,9 @@ class PublishCommand extends Command {
       // 1.初始化检查
       this.prepare();
       // Git Flow自动化
+      const git = new Git(this.projectInfo, this.options);
+      await git.prepare(); // 自动化提交准备和代码仓库初始化
+      await git.commit(); // 代码自动化提交
       //   3. 云构建和云发布
       const endTime = new Date().getTime();
       log.info(
@@ -48,7 +53,7 @@ class PublishCommand extends Command {
     // 2.确认是否包含name，version，build命令
     const pkg = fse.readJsonSync(pkgPath);
     const { name, version, scripts } = pkg;
-    log.verbose("package.json", name, version, scripts);
+    log.verbose("package.json", name, version, scripts.build);
     if (!name || !version || !scripts || !scripts.build) {
       throw new Error(
         "package.json信息不全，请检查是否存在name、version、scripts（需提供build命令）！"
