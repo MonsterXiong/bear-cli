@@ -26,11 +26,18 @@ class PublishCommand extends Command {
       this.prepare();
       // Git Flow自动化
       const git = new Git(this.projectInfo, this.options);
+      console.log();
+      log.info(chalk.red("==="), chalk.gray("git配置检查"), chalk.red("==="));
       await git.prepare(); // 自动化提交准备和代码仓库初始化
+      console.log();
+      log.info(chalk.red("==="), chalk.gray("git自动提交"), chalk.red("==="));
       await git.commit(); // 代码自动化提交
+      console.log();
+      log.info(chalk.red("==="), chalk.gray("云构建+云发布"), chalk.red("==="));
       //   3. 云构建和云发布~~
       await git.publish();
       const endTime = new Date().getTime();
+      log.verbose("elapsed time", new Date(startTime), new Date(endTime));
       log.info(
         "本次发布耗时：",
         Math.floor((endTime - startTime) / 1000) + "秒"

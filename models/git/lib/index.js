@@ -172,13 +172,87 @@ class Git {
         log.success("git publish类型获取成功", gitPublishType);
       }
       log.verbose("开始创建构建类", "~~~");
-      // const cloudBuild = new CloudBuild(this, gitPublishType, {
-      //   prod: !!this.prod,
-      //   keepCache: !!this.keepCache,
-      //   cnpm: !!this.cnpm,
-      //   buildCmd: this.buildCmd,
-      // });
+      console.log(this);
+      const cloudBuild = new CloudBuild(this, gitPublishType, {
+        prod: !!this.prod,
+        keepCache: !!this.keepCache,
+        cnpm: !!this.cnpm,
+        buildCmd: this.buildCmd,
+      });
+      await cloudBuild.prepare();
+      await cloudBuild.init();
+      buildRet = await cloudBuild.build();
+      if (buildRet) {
+        await this.uploadTemplate();
+      }
     }
+    if (this.prod && buildRet) {
+      await this.uploadComponentToNpm();
+      await this.checkTag(); // 打tag
+      await this.checkoutBranch("master"); // 切换分支到master
+      await this.mergeBranchToMaster(); // 将代码合并到master
+      await this.pushRemoteRepo("master"); // 将代码推送到远程master
+      await this.deleteLocalBranch(); // 删除本地分支
+      await this.deleteRemoteBranch(); // 删除远程分支
+    }
+    if (buildRet) {
+      log.success("发布成功");
+    } else {
+      log.success("发布失败");
+    }
+    return buildRet;
+  }
+
+  async mergeBranchToMaster() {
+    log.notice("开始合并代码", `[${this.branch}] -> [master]`);
+    await this.git.mergeFromTo(this.branch, "master");
+    log.success("代码合并成功", `[${this.branch}] -> [master]`);
+  }
+
+  async deleteLocalBranch() {
+    log.notice("开始删除本地分支", this.branch);
+    await this.git.deleteLocalBranch(this.branch);
+    log.success("删除本地分支成功", this.branch);
+  }
+
+  async deleteRemoteBranch() {
+    log.notice("开始删除远程分支", this.branch);
+    await this.git.push(["origin", "--delete", this.branch]);
+    log.success("删除远程分支成功", this.branch);
+  }
+
+  async checkTag() {
+    log.notice("获取远程 tag 列表");
+    const tag = `${VERSION_RELEASE}/${this.version}`;
+    const tagList = await this.getRemoteBranchList(VERSION_RELEASE);
+    if (tagList.includes(this.version)) {
+      log.success("远程 tag 已存在", tag);
+      await this.git.push(["origin", `:refs/tags/${tag}`]);
+      log.success("远程 tag 已删除", tag);
+    }
+    const localTagList = await this.git.tags();
+    if (localTagList.all.includes(tag)) {
+      log.success("本地 tag 已存在", tag);
+      await this.git.tag(["-d", tag]);
+      log.success("本地 tag 已删除", tag);
+    }
+    await this.git.addTag(tag);
+    log.success("本地 tag 创建成功", tag);
+    await this.git.pushTags("origin");
+    log.success("远程 tag 推送成功", tag);
+  }
+  async uploadComponentToNpm() {
+    if (this.isComponent()) {
+      log.notice("开始发布 npm");
+      require("child_process").execSync("npm publish", {
+        cwd: this.dir,
+      });
+      log.notice("npm 发布成功");
+    }
+  }
+  // 发布HTML模板代码
+  async uploadTemplate() {
+    // TODO:发布HTML模板代码
   }
 
   // 发布前自动检查

@@ -30,6 +30,7 @@
     "@bear-cli/log": "file:../../utils/log",
     "@bear-cli/request": "file:../../utils/request",
     "@bear-cli/utils": "file:../../utils/utils",
+    "@bear-cli/build": "file:../../models/build",
     "axios": "^0.26.1",
     "fs-extra": "^10.0.1",
     "inquirer": "^8.2.1",
