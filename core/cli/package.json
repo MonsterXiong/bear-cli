@@ -1,6 +1,6 @@
 {
   "name": "@bear-cli/core",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "description": "bear-cli core",
   "author": "monster-liu <liuxiongcheng9774@gmail.com>",
   "homepage": "",
@@ -23,8 +23,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@bear-cli/command": "file:../../models/command",
     "@bear-cli/build": "file:../../models/build",
+    "@bear-cli/command": "file:../../models/command",
     "@bear-cli/exec": "file:../../core/exec",
     "@bear-cli/get-npm-info": "file:../../utils/get-npm-info",
     "@bear-cli/log": "^1.0.20",
