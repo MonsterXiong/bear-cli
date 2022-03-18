@@ -5,8 +5,9 @@ const get = require("lodash/get");
 const { getOSSProject } = require("./getOSSProject");
 const inquirer = require("inquirer");
 const { parseMsg } = require("./parse");
+const chalk = require("chalk");
 
-const WS_SERVER = "ws://cli.monsterbear.top:7001";
+const WS_SERVER = "ws://127.0.0.1:7001";
 const FAILED_CODE = [
   "prepare failed",
   "download failed",
@@ -15,6 +16,8 @@ const FAILED_CODE = [
   "publish failed",
 ];
 
+const TIME_OUT = 5 * 60 * 1000;
+const CONNECT_TIME_OUT = 5 * 1000;
 class CloudBuild {
   constructor(git, type, options = {}) {
     log.verbose("CloudBuild options", options);
@@ -22,7 +25,8 @@ class CloudBuild {
     // 暂时只支持OSS,接下来会支持COS和七牛云
     this._type = type;
     // 超时时间，默认20分钟
-    this._timeout = get(options, "timeout") || 1200 * 1000;
+    // get(options, "timeout") || 1200 * 1000;
+    this._timeout = TIME_OUT;
     this._prod = options.prod;
     this._keepCache = options.keepCache;
     this._cnpm = options.cnpm;
@@ -65,7 +69,6 @@ class CloudBuild {
 
   init() {
     log.notice("开始云构建任务初始化");
-    log.verbose(this._git.remote);
     return new Promise((resolve, reject) => {
       const socket = io(WS_SERVER, {
         query: {
@@ -84,7 +87,7 @@ class CloudBuild {
       this.timeout(() => {
         log.error("云构建服务创建超时，自动终止");
         disconnect();
-      }, 5000);
+      }, CONNECT_TIME_OUT);
       const disconnect = () => {
         clearTimeout(this.timer);
         socket.disconnect();
@@ -129,7 +132,14 @@ class CloudBuild {
           this._socket.close();
           ret = false;
         } else {
-          log.success(parsedMsg.action, parsedMsg.message);
+          if (parsedMsg.action === "build success") {
+            log.success(
+              parsedMsg.action,
+              chalk.hex("#DEADED").bold(parsedMsg.message)
+            );
+          } else {
+            log.success(parsedMsg.action, parsedMsg.message);
+          }
         }
       });
       this._socket.on("building", (msg) => {

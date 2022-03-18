@@ -30,7 +30,9 @@
     "@bear-cli/command": "file:../../models/command",
     "@bear-cli/git": "file:../../models/git",
     "@bear-cli/log": "file:../../utils/log",
+    "chalk": "^4.1.2",
     "fs-extra": "^10.0.1",
-    "inquirer": "^8.2.1"
+    "inquirer": "^8.2.1",
+    "listr": "^0.14.3"
   }
 }

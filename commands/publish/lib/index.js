@@ -3,7 +3,9 @@
 const path = require("path");
 const fs = require("fs");
 
+const chalk = require("chalk");
 const fse = require("fs-extra");
+const Listr = require("listr");
 
 const Command = require("@bear-cli/command");
 const Git = require("@bear-cli/git");
@@ -27,21 +29,38 @@ class PublishCommand extends Command {
       // Git Flow自动化
       const git = new Git(this.projectInfo, this.options);
       console.log();
-      log.info(chalk.red("==="), chalk.gray("git配置检查"), chalk.red("==="));
+      log.info(
+        chalk.white("========"),
+        chalk.hex("#DEADED").bold("git配置检查"),
+        chalk.white("========")
+      );
       await git.prepare(); // 自动化提交准备和代码仓库初始化
       console.log();
-      log.info(chalk.red("==="), chalk.gray("git自动提交"), chalk.red("==="));
+      log.info(
+        chalk.white("========"),
+        chalk.hex("#DEADED").bold("git自动提交"),
+        chalk.white("========")
+      );
       await git.commit(); // 代码自动化提交
       console.log();
-      log.info(chalk.red("==="), chalk.gray("云构建+云发布"), chalk.red("==="));
+      log.info(
+        chalk.white("========"),
+        chalk.hex("#DEADED").bold("云构建+云发布"),
+        chalk.white("========")
+      );
       //   3. 云构建和云发布~~
       await git.publish();
       const endTime = new Date().getTime();
-      log.verbose("elapsed time", new Date(startTime), new Date(endTime));
+      log.verbose(
+        "elapsed time",
+        new Date(startTime).toString(),
+        new Date(endTime).toString()
+      );
       log.info(
         "本次发布耗时：",
         Math.floor((endTime - startTime) / 1000) + "秒"
       );
+      console.log();
     } catch (e) {
       log.error(e.message);
       if (process.env.LOG_LEVEL === "verbose") {

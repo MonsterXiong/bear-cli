@@ -9,10 +9,12 @@ const userHome = require("os").homedir();
 const pathExists = require("path-exists").sync;
 const chalk = require("chalk");
 const semver = require("semver");
-const terminalLink = require("terminal-link");
-const { Command, Option } = require("commander");
+const CFonts = require("cfonts");
+const open = require("open");
+const { Command } = require("commander");
 const program = new Command();
 const constant = require("./constant");
+const { prompt } = require("enquirer");
 
 const error = chalk.red;
 
@@ -34,42 +36,19 @@ async function core() {
 
 function registerCommand() {
   program
+    .version(pkg.version)
     .name(Object.keys(pkg.bin)[0])
     .usage("<command> [options]")
-    .option("-v,--version", "查看版本号", pkg.version)
+    .option("-v,--version", "查看版本号")
     .option("-d, --debug", "打开调试模式", false)
     .option("-tp, --targetPath <value>", "指定本地调试文件路径")
     .option("-b, --buildCmd <value>", "构建命令")
     .option("-h, --help", "帮助文档");
 
   program
-    .command("author")
-    .description("作者信息")
-    .action(async (source, destination) => {
-      log.success("欢迎使用Bear脚手架");
-      log.success("作者博客", "1123");
-      log.success("Github", "https://github.com/MonsterXiong");
-      log.success("作者介绍", "Monster Bear");
-    });
-
-  program
-    .command("docs")
-    .description("查看文档")
-    .option("-t,--type", "指定类型")
-    .action(() => {
-      console.log("查看文档");
-    });
-
-  program
     .command("init [projectName]")
     .description("项目初始化")
     .option("-f,--force", "是否强制初始化项目")
-    .action(exec);
-
-  program
-    .command("add <command> <name>")
-    .description("添加内容")
-    .option("--path", "文件放置路径", "./")
     .action(exec);
 
   program
@@ -81,6 +60,12 @@ function registerCommand() {
     .action(exec);
 
   program
+    .command("add")
+    .description("添加内容")
+    .option("--path", "文件放置路径", "./")
+    .action(exec);
+
+  program
     .command("clean")
     .description("清除缓存文件")
     .action(() => {
@@ -88,11 +73,70 @@ function registerCommand() {
     });
 
   program
-    .command("help")
-    .description("帮助文档")
+    .command("daily [dailyName]")
+    .description("日常浏览")
+    .action(async (dailyName) => {
+      const list = [
+        { name: "Blog", value: "https://blog.monsterbear.top/" },
+        { name: "Node", value: "https://monsterxiong.github.io/Node/" },
+        {
+          name: "Tool",
+          value: "https://monsterxiong.github.io/Tool-Docs/",
+        },
+        { name: "Github", value: "https://github.com/MonsterXiong" },
+        { name: "Gitee", value: "https://gitee.com/daxiong9774" },
+        { name: "npm", value: "https://www.npmjs.com/" },
+        { name: "BBS", value: "https://message-board-smoky.vercel.app/" },
+      ];
+      if (dailyName) {
+        const item = list.filter(
+          (item) => item.name.toLowerCase() === dailyName.toLowerCase()
+        );
+        if (item && item.length > 0) {
+          await open(item[0].value);
+          return;
+        } else {
+          console.log("您要找的东西可能在下面列表中~~");
+        }
+      }
+      try {
+        const daily = (
+          await prompt({
+            type: "autocomplete",
+            name: "daily",
+            message: chalk.red("选择您要进去的网页"),
+            limit: 10,
+            choices: list,
+          })
+        ).daily;
+        await open(daily);
+      } catch (error) {}
+    });
+
+  program
+    .command("author")
+    .description("作者信息")
+    .action(async (source, destination) => {
+      CFonts.say("Bear", {
+        font: "3d",
+        colors: ["system"],
+        spaceless: true,
+        gradient: "red,magenta",
+        env: "node",
+      });
+      log.info("欢迎使用Bear脚手架");
+      log.info(chalk.red("作者博客"), "https://blog.monsterbear.top/");
+      log.info("Github", chalk.red("https://github.com/MonsterXiong"));
+      log.info("Name", "Monster Bear");
+      log.info("What", "一个平凡的coder");
+    });
+
+  program
+    .command("docs")
+    .description("查看文档")
+    .option("-t,--type", "指定类型")
     .action(() => {
-      console.log();
-      console.log("打开帮助文档");
+      console.log("查看文档");
     });
 
   // 开启debug模式
@@ -110,7 +154,7 @@ function registerCommand() {
     process.env.CLI_TARGET_PATH = program.opts().targetPath;
   });
 
-  // 指定targetPath
+  // 指定buildCmd
   program.on("option:buildCmd", function () {
     process.env.CLI_BUILD_CMD = program.opts().buildCmd;
   });
@@ -190,6 +234,4 @@ function checkRoot() {
   require("root-check")();
 }
 
-function checkPkgVersion() {
-  log.info("cli", pkg.version);
-}
+function checkPkgVersion() {}

@@ -12,6 +12,7 @@ const semver = require("semver");
 const { readFile, writeFile } = require("@bear-cli/utils");
 const log = require("@bear-cli/log");
 const { oraStart } = require("@bear-cli/utils");
+const CloudBuild = require("@bear-cli/build");
 
 const { createComponent } = require("./ComponentRequest");
 const Github = require("./Github");
@@ -83,6 +84,8 @@ const GIT_PUBLISH_TYPE = [
   },
 ];
 
+const BUILD_CMD_WHITE_LIST = ["npm", "cnpm", "pnpm", "yarn"];
+
 class Git {
   constructor(
     { name, version, dir },
@@ -116,6 +119,7 @@ class Git {
     await this.checkGitOwner(); // 确认远程仓库类型
     await this.checkRepo(); // 检查并创建远程仓库
     await this.checkGitIgnore(); // 检查并创建.gitignore文件
+    await this.checkComponent();
     await this.init(); // 完成本地仓库初始化
   }
   async init() {
@@ -129,17 +133,17 @@ class Git {
   async commit() {
     // 1.生成开发分支
     await this.getCorrectVersion();
-    // 2.检查stash区
+    // // 2.检查stash区
     await this.checkStash();
-    // 3.检查代码冲突
+    // // 3.检查代码冲突
     await this.checkConflicted();
-    // 检查未提交情况
+    // // 检查未提交情况
     await this.checkNotCommitted();
-    // 4.切换开发分支
+    // // 4.切换开发分支
     await this.checkoutBranch(this.branch);
-    // 5.合并远程master分支和开发分支代码
+    // // 5.合并远程master分支和开发分支代码
     await this.pullRemoteMasterAndBranch();
-    // 6.将开发分支推送到远程仓库
+    // // 6.将开发分支推送到远程仓库
     await this.pushRemoteRepo(this.branch);
   }
 
@@ -151,7 +155,6 @@ class Git {
       await this.saveComponentToDB();
     } else {
       await this.prePublish();
-      log.notice("开始发布");
       const gitPublishTypePath = this.createPath(GIT_PUBLISH_FILE);
       let gitPublishType = readFile(gitPublishTypePath);
       if (!gitPublishType) {
@@ -160,7 +163,7 @@ class Git {
             type: "list",
             name: "gitPublishType",
             choices: GIT_PUBLISH_TYPE,
-            message: "请选择您想要上传代码的平台",
+            message: "请选择您想要上传资源的平台",
           })
         ).gitPublishType;
         writeFile(gitPublishTypePath, gitPublishType);
@@ -171,8 +174,6 @@ class Git {
       } else {
         log.success("git publish类型获取成功", gitPublishType);
       }
-      log.verbose("开始创建构建类", "~~~");
-      console.log(this);
       const cloudBuild = new CloudBuild(this, gitPublishType, {
         prod: !!this.prod,
         keepCache: !!this.keepCache,
@@ -255,32 +256,31 @@ class Git {
     // TODO:发布HTML模板代码
   }
 
-  // 发布前自动检查
+  //  发布前自动检查
   async prePublish() {
-    log.notice("开始执行发布前自动检查任务");
-    // 代码检查
-    this.checkProject();
-    // build 检查
-    log.success("自动检查通过");
+    if (!this.buildCmd) {
+      this.buildCmd = "npm run build";
+    }
+    const buildCmdArray = this.buildCmd.split(" ");
+    if (!BUILD_CMD_WHITE_LIST.includes(buildCmdArray[0])) {
+      throw new Error("Build命令非法，必须使用npm、cnpm、pnpm或者yarn");
+    }
+    log.notice("开始进行发布前预检查");
+    this.checkProject(buildCmdArray[buildCmdArray.length - 1]);
+    log.success("预检查通过");
   }
   // build结果检查
-  checkProject() {
+  checkProject(key) {
     log.notice("开始检查代码结构");
     const pkg = this.getPackageJson();
-    if (!pkg.scripts || !Object.keys(pkg.scripts).includes("build")) {
-      throw new Error("build命令不存在！");
+    if (!pkg.scripts || !Object.keys(pkg.scripts).includes(key)) {
+      throw new Error(`${this.buildCmd}命令不存在！`);
     }
     log.success("代码结构检查通过");
     log.notice("开始检查 build 结果");
-    if (this.buildCmd) {
-      require("child_process").execSync(this.buildCmd, {
-        cwd: this.dir,
-      });
-    } else {
-      require("child_process").execSync("npm run build", {
-        cwd: this.dir,
-      });
-    }
+    require("child_process").execSync(this.buildCmd, {
+      cwd: this.dir,
+    });
     log.notice("build 结果检查通过");
   }
 
@@ -344,10 +344,9 @@ class Git {
       await this.pushRemoteRepo("master");
     }
   }
-
   async checkRemoteMaster() {
     return (
-      (await this.git.listRemote(["--refs"])).indexOf("refs/heads/master") >= 0
+      (await this.git.listRemote(["--refs"])).indexOf("refs/header/master") >= 0
     );
   }
 
@@ -360,14 +359,13 @@ class Git {
       status.modified.length > 0 ||
       status.renamed.length > 0
     ) {
-      log.verbose("status", status);
       await this.git.add(status.not_added);
       await this.git.add(status.created);
       await this.git.add(status.deleted);
       await this.git.add(status.modified);
       await this.git.add(status.renamed);
       let message;
-      if (!message) {
+      while (!message) {
         message = (
           await inquirer.prompt({
             type: "text",
@@ -391,7 +389,12 @@ class Git {
 
   async pullRemoteMasterAndBranch() {
     log.info(`合并 [master] -> [${this.branch}]`);
-    await this.pullRemoteRepo("master");
+    // TODO:ssss
+    try {
+      await this.pullRemoteRepo("master");
+    } catch (error) {
+      throw new Error(error.message);
+    }
     log.success("合并远程 [master] 分支代码成功");
     await this.checkConflicted();
     log.info("检查远程开发分支");
@@ -546,10 +549,9 @@ class Git {
     await this.git.init(this.dir);
     log.info("添加git remote");
     const remotes = await this.git.getRemotes();
-    log.verbose("git remotes", remotes);
-    console.log(remotes);
     if (!remotes.find((item) => item.name === "origin")) {
       await this.git.addRemote("origin", this.remote);
+      log.verbose("git remotes 添加成功", this.remote);
     }
   }
 
@@ -561,6 +563,28 @@ class Git {
       return true;
     }
   }
+  async checkComponent() {
+    let componentFile = this.isComponent();
+    // 只有 component 才启动该逻辑
+    if (componentFile) {
+      log.notice("开始检查 build 结果");
+      require("child_process").execSync("npm run build", {
+        cwd: this.dir,
+      });
+      const buildPath = path.resolve(this.dir, componentFile.buildPath);
+      if (!fs.existsSync(buildPath)) {
+        throw new Error(`构建结果：${buildPath} 不存在！`);
+      }
+      const pkg = this.getPackageJson();
+      if (!pkg.files || !pkg.files.includes(componentFile.buildPath)) {
+        throw new Error(
+          `package.json 中 files 属性未添加构建结果目录：[${componentFile.buildPath}]，请在 package.json 中手动添加！`
+        );
+      }
+      log.notice("build 结果检查通过");
+    }
+  }
+
   checkGitIgnore() {
     const gitIgnore = path.resolve(this.dir, GIT_IGNORE_FILE);
     if (!fs.existsSync(gitIgnore)) {
